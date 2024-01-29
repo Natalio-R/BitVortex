@@ -1,0 +1,33 @@
+.menu {
+  border-bottom: 1px solid red;
+
+  .menu__container {
+    margin: 0 auto;
+    padding: 12px 15px;
+    max-width: 1300px;
+
+    .menu__info-list {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+
+      .menu__data-info {
+        color: #797979;
+        font-weight: 500;
+        font-size: 0.75rem;
+        line-height: 1rem;
+
+        span.menu__data-number {
+          font-weight: 600;
+          cursor: pointer;
+          color: #000;
+
+          &:hover {
+            color: blue;
+          }
+        }
+      }
+    }
+  }
+}

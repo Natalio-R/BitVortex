@@ -1,175 +1,102 @@
-import React, { useEffect, useState } from "react";
-import { getCryptocurrencies, getCryptoexchanges } from "../api";
+import React, { useState, useEffect } from "react";
+import { getAssets } from "../api";
 
 const Menu = () => {
-  const [totalCoins, setTotalCoins] = useState(null);
-  const [totalExchanges, setTotalExchanges] = useState(null);
+  const [totalCoins, setTotalCoins] = useState(0);
+  const [totalExchanges, setTotalExchanges] = useState(0);
+  const [marketCap, setMarketCap] = useState(0);
+  const [volume24h, setVolume24h] = useState(0);
+  const [dominantCurrency, setDominantCurrency] = useState("");
+  const [dominantCurrencyPercentage, setDominantCurrencyPercentage] =
+    useState(0);
 
   useEffect(() => {
-    const fetchTotalCoins = async () => {
+    const fetchData = async () => {
       try {
-        const total = await getCryptocurrencies();
-        setTotalCoins(total);
+        const assets = await getAssets();
+
+        // Total de monedas
+        const coinsCount = assets.length;
+        setTotalCoins(coinsCount);
+
+        // Total de intercambios
+        const exchangesCount = new Set(assets.map((asset) => asset.exchangeId))
+          .size;
+        setTotalExchanges(exchangesCount);
+
+        // Capitalización de mercado total
+        const totalMarketCap = assets.reduce(
+          (acc, asset) => acc + parseFloat(asset.marketCapUsd || 0),
+          0
+        );
+        setMarketCap(totalMarketCap.toFixed(4));
+
+        // Volumen en las últimas 24 horas
+        const totalVolume24h = assets.reduce(
+          (acc, asset) => acc + parseFloat(asset.volumeUsd24Hr || 0),
+          0
+        );
+        setVolume24h(formatVolume(totalVolume24h));
+
+        // Moneda que más predomina
+        const dominantCurrencyInfo = assets.reduce((prev, curr) => {
+          return parseFloat(curr.priceUsd || 0) > parseFloat(prev.priceUsd || 0)
+            ? curr
+            : prev;
+        }, {});
+        setDominantCurrency(
+          `${
+            dominantCurrencyInfo.symbol
+          } ${dominantCurrencyInfo.percentTotalVolume.toFixed(2)}%`
+        );
+        setDominantCurrencyPercentage(
+          dominantCurrencyInfo.percentTotalVolume.toFixed(2)
+        );
       } catch (error) {
-        console.error("Error fetching total coins:", error);
+        console.error("No se ha encontrado datos.", error);
       }
     };
 
-    fetchTotalCoins();
-  }, []);
-
-  useEffect(() => {
-    const fetchTotalExchanges = async () => {
-      try {
-        const total = await getCryptoexchanges();
-        setTotalExchanges(total);
-      } catch (error) {
-        console.error("Error fetching total coins:", error);
+    const formatVolume = (volume) => {
+      if (volume >= 1e9) {
+        return `${(volume / 1e9).toFixed(3)} bill $`;
+      } else if (volume >= 1e6) {
+        return `${(volume / 1e6).toFixed(3)} mill $`;
+      } else {
+        return `${volume.toFixed(2)} $`;
       }
     };
 
-    fetchTotalExchanges();
+    fetchData();
   }, []);
 
   return (
     <>
-      <div className="container-fluid bg-white py-2">
-        <div className="container mx-auto flex items-center justify-between">
-          <div className="whitespace-nowrap">
-            <div className="inline-block text-xs font-medium me-3">
-              <span className="text-gray-600">
-                Criptomonedas:{" "}
-                {totalCoins !== null ? (
-                  <a
-                    href="/"
-                    className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                  >
-                    {`+${totalCoins}`}
-                  </a>
-                ) : (
-                  <a
-                    href="/"
-                    className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                  >
-                    {`N/A`}
-                  </a>
-                )}
+      <div className="menu">
+        <div className="menu__container">
+          <div className="menu__info-list">
+            <p className="menu__data-info">
+              Monedas: <span className="menu__data-number">{totalCoins}</span>
+            </p>
+            <p className="menu__data-info">
+              Intercambios:{" "}
+              <span className="menu__data-number">{totalExchanges}</span>
+            </p>
+            <p className="menu__data-info">
+              Cap. de mercado:{" "}
+              <span className="menu__data-number">{marketCap}</span>
+            </p>
+            <p className="menu__data-info">
+              Volumen en 24h:{" "}
+              <span className="menu__data-number">{volume24h}</span>
+            </p>
+            <p className="menu__data-info">
+              Dominio:{" "}
+              <span className="menu__data-number">{dominantCurrency}</span>
+              <span className="menu__data-number2">
+                {dominantCurrencyPercentage}%
               </span>
-            </div>
-            <div className="inline-block text-xs font-medium me-3">
-              <span className="text-gray-600">
-                Intercambios:{" "}
-                {totalExchanges !== null ? (
-                  <a
-                    href="/"
-                    className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                  >
-                    {`${totalExchanges}`}
-                  </a>
-                ) : (
-                  <a
-                    href="/"
-                    className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                  >
-                    {`N/A`}
-                  </a>
-                )}
-              </span>
-            </div>
-            <div className="inline-block text-xs font-medium me-3">
-              <span className="text-gray-600">
-                Cap. de Mercado:{" "}
-                <a
-                  href="/"
-                  className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                >
-                  €1.3T
-                </a>
-              </span>
-            </div>
-            <div className="inline-block text-xs font-medium me-3">
-              <span className="text-gray-600">
-                Volumen de 24 horas:{" "}
-                <a
-                  href="/"
-                  className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                >
-                  €46.2B
-                </a>
-              </span>
-            </div>
-            <div className="inline-block text-xs font-medium me-3">
-              <span className="text-gray-600">
-                Dominio:{" "}
-                <a
-                  href="/"
-                  className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                >
-                  BTC: 52.0%
-                </a>{" "}
-                <a
-                  href="/"
-                  className="text-blue-600 dark:text-blue-500 hover:text-blue-500"
-                >
-                  ETH: 17.3%
-                </a>
-              </span>
-            </div>
-          </div>
-          <div className="whitespace-nowrap">
-            <button
-              id="dropdownDefaultButton"
-              data-dropdown-toggle="dropdown"
-              class="text-gray-800 bg-gray-100 focus:outline-none focus:bg-gray-200 font-medium rounded-lg text-sm px-4 py-1.5 text-center inline-flex items-center me-2"
-              type="button"
-            >
-              Idioma{" "}
-              <svg
-                class="w-2.5 h-2.5 ms-3"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 10 6"
-              >
-                <path
-                  stroke="#808A9D"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="m1 1 4 4 4-4"
-                />
-              </svg>
-            </button>
-
-            {/*Dropdown menu */}
-            <div
-              id="dropdown"
-              class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-lg w-32"
-            >
-              <ul
-                class="p-2 text-sm text-gray-700 font-medium"
-                aria-labelledby="dropdownDefaultButton"
-              >
-                <li>
-                  <a href="/" class="block p-2 hover:bg-gray-100 rounded-md">
-                    Inglés
-                  </a>
-                </li>
-                <li>
-                  <a href="/" class="block p-2 hover:bg-gray-100 rounded-md">
-                    Español
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            <button
-              id="apiButton"
-              className="text-gray-800 bg-gray-100 focus:outline-none focus:bg-gray-200 font-medium rounded-lg text-sm px-2.5 py-1.5 text-center inline-flex items-center"
-              type="button"
-            >
-              API
-            </button>
+            </p>
           </div>
         </div>
       </div>
